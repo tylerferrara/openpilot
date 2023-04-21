@@ -24,7 +24,8 @@ class CarInterface(CarInterfaceBase):
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     if self.CP.carFingerprint == CAR.RAM_1500:
-      return self.torque_from_lateral_accel_ram1500
+      # return self.torque_from_lateral_accel_ram1500
+      return self.torque_from_lateral_accel_linear
     else:
       return self.torque_from_lateral_accel_linear
 
