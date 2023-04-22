@@ -13,6 +13,7 @@ function agnos_init {
   if [ -f "$BASEDIR/prebuilt" ]; then
     sleep 3
   fi
+  sleep 10
 
   # TODO: move this to agnos
   sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
