@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
   if (!Hardware::PC()) {
     int err;
-    err = util::set_realtime_priority(54);
+    err = util::set_realtime_priority(20);
     assert(err == 0);
     err = util::set_core_affinity({4});
     assert(err == 0);

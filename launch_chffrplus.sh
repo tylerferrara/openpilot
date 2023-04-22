@@ -79,6 +79,8 @@ function launch {
   # hardware specific init
   agnos_init
 
+  ./tune.sh
+
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 

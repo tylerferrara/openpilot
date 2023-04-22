@@ -139,7 +139,7 @@ void encoderd_thread() {
 int main() {
   if (!Hardware::PC()) {
     int ret;
-    ret = util::set_realtime_priority(52);
+    ret = util::set_realtime_priority(20);
     assert(ret == 0);
     ret = util::set_core_affinity({3});
     assert(ret == 0);

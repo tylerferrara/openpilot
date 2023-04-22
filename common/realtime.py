@@ -22,11 +22,11 @@ class Priority:
   # CORE 2
   # - modeld = 55
   # - camerad = 54
-  CTRL_LOW = 51 # plannerd & radard
+  CTRL_LOW = 10 # plannerd & radard
 
   # CORE 3
   # - boardd = 55
-  CTRL_HIGH = 53
+  CTRL_HIGH = 11
 
 
 def set_realtime_priority(level: int) -> None:

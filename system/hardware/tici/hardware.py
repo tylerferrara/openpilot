@@ -475,12 +475,12 @@ class Tici(HardwareBase):
     # *** IRQ config ***
 
     # move these off the default core
-    affine_irq(1, "msm_drm")
-    affine_irq(1, "msm_vidc")
-    affine_irq(1, "i2c_geni")
+    affine_irq(2, "msm_drm")
+    affine_irq(2, "msm_vidc")
+    affine_irq(2, "i2c_geni")
 
     # mask off big cluster from default affinity
-    sudo_write("f", "/proc/irq/default_smp_affinity")
+    #sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
