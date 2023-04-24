@@ -50,11 +50,12 @@ class CarController:
       self.lat_active_cnt += 1
     else:
       self.lat_active_cnt = 0
+    send_steer = self.lat_active_cnt > 50
 
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
-      if self.lat_active_cnt > 50:
+      if send_steer:
         # apply limits to curvature and clip to signal range
-        apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
+        apply_curvature = apply_std_steer_angle_limits(-actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
         apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
@@ -66,9 +67,15 @@ class CarController:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = self.frame // CarControllerParams.STEER_STEP
-        can_sends.append(create_lat_ctl2_msg(self.packer, mode, 0., 0., -apply_curvature, 0., counter))
+        can_sends.append(create_lat_ctl2_msg(self.packer, mode, 0., 0., apply_curvature, 0., counter))
       else:
-        can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
+        sign = 1 if apply_curvature > 0 else -1
+        path_offset, path_angle, curvature_rate = 0, 0, 0
+        if send_steer:
+          path_offset = 5.11 * sign
+          path_angle = 0.5 * sign
+          curvature_rate = 0.00102375 * sign
+        can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, path_offset, path_angle, apply_curvature, curvature_rate))
 
     ### longitudinal control ###
     # send acc command at 50Hz
