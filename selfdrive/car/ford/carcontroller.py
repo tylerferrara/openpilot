@@ -55,8 +55,8 @@ class CarController:
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if send_steer:
         # apply limits to curvature and clip to signal range
-        apply_curvature = apply_std_steer_angle_limits(-actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
-        apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
+        # apply_curvature = apply_std_steer_angle_limits(-actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
+        apply_curvature = clip(-actuators.curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
@@ -71,7 +71,7 @@ class CarController:
       else:
         sign = 1 if apply_curvature > 0 else -1
         path_offset, path_angle, curvature_rate = 0, 0, 0
-        if send_steer:
+        if send_steer and abs(apply_curvature) > 0:
           path_offset = 5.11 * sign
           path_angle = 0.5 * sign
           curvature_rate = 0.00102375 * sign
