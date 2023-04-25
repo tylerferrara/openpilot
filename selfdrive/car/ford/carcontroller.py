@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
+from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
@@ -61,7 +61,6 @@ class CarController:
         apply_curvature = 0.
 
       self.apply_curvature_last = apply_curvature
-      can_sends.append(create_lka_msg(self.packer))
 
       if self.CP.carFingerprint in CANFD_CARS:
         # TODO: extended mode
@@ -77,8 +76,10 @@ class CarController:
           curvature_rate = 0.00102375 * sign
         can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, path_offset, path_angle, apply_curvature, curvature_rate))
 
+    if (self.frame % CarControllerParams.LKA_STEP) == 0:
+      can_sends.append(create_lka_msg(self.packer))
+
     ### longitudinal control ###
-    # send acc command at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
@@ -90,18 +91,16 @@ class CarController:
         gas = -5.0
         decel = True
 
-      can_sends.append(create_acc_command(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel, CS.out.cruiseState.standstill))
+
+    if self.frame % CarControllerParams.ACC_UI_STEP == 0:
+      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, CS.out.cruiseState.standstill, hud_control, CS.acc_tja_status_stock_values))
 
     ### ui ###
-    send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
-
     # send lkas ui command at 1Hz or if ui state changes
+    send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
-
-    # send acc ui command at 20Hz or if ui state changes
-    if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
