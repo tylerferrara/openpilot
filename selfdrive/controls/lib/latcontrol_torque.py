@@ -26,10 +26,11 @@ class LatControlTorque(LatControl):
     super().__init__(CP, CI)
     self.torque_params = CP.lateralTuning.torque
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
-                             k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+                             k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max, k_d=1.0)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.use_steering_angle = self.torque_params.useSteeringAngle
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
+    self.prev_error = 0.0
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -41,6 +42,7 @@ class LatControlTorque(LatControl):
 
     if not active:
       output_torque = 0.0
+      self.prev_error = 0.0
       pid_log.active = False
     else:
       if self.use_steering_angle:
@@ -67,6 +69,8 @@ class LatControlTorque(LatControl):
       torque_from_measurement = self.torque_from_lateral_accel(measurement, self.torque_params, measurement,
                                                      lateral_accel_deadzone, friction_compensation=False)
       pid_log.error = torque_from_setpoint - torque_from_measurement
+      error_diff = pid_log.error - self.prev_error
+      self.prev_error = pid_log.error
       ff = self.torque_from_lateral_accel(gravity_adjusted_lateral_accel, self.torque_params,
                                           desired_lateral_accel - actual_lateral_accel,
                                           lateral_accel_deadzone, friction_compensation=True)
@@ -75,7 +79,8 @@ class LatControlTorque(LatControl):
       output_torque = self.pid.update(pid_log.error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
-                                      freeze_integrator=freeze_integrator)
+                                      freeze_integrator=freeze_integrator,
+                                      error_rate=error_diff)
 
       pid_log.active = True
       pid_log.p = self.pid.p
